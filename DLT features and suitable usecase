@@ -1,0 +1,48 @@
+
+We can enforce data quality with Delta Live Tables expectations, which allow us to define expected data quality and specify how to handle records that fail those expectations.​
+What are Delta Live Tables expectations?​
+Expectations are optional clauses we add to Delta Live Tables dataset declarations that apply data quality checks on each record passing through a query.​
+An expectation consists of three things:​
+* A description, which acts as a unique identifier and allows to track metrics for the constraint.​
+* A Boolean statement that always returns true or false based on some stated condition.​
+* An action to take when a record fails the expectation, meaning the Boolean returns false.​
+
+The following matrix shows the three actions we can apply to invalid records:
+ Action​	         Result​
+ warn(default)​	 Invalid records are written to the target; failure is reported as a metric for the dataset.​
+ drop​	           Invalid records are dropped before data is written to the target; failure is reported as a metrics for the dataset.​
+ fail​	           Invalid records prevent the update from succeeding. Manual intervention is required before re-processing.​
+
+Easy implementation of SCD Type - 1/2
+Apply Changes API : Simplify change data capture in Delta Live Tables
+
+Delta Live Tables simplifies change data capture (CDC) with the APPLY CHANGES API. Previously, the MERGE INTO statement was commonly used for processing CDC records on Databricks. However, MERGE INTO can produce incorrect results because of out-of-sequence records, or require complex logic to re-order records.
+By automatically handling out-of-sequence records, the APPLY CHANGES API in Delta Live Tables ensures correct processing of CDC records and removes the need to develop complex logic for handling out-of-sequence records.
+The APPLY CHANGES API is supported in the Delta Live Tables SQL and Python interfaces, including support for updating tables with SCD type 1 and type 2:
+Use SCD type 1 to update records directly. History is not retained for records that are updated.
+Use SCD type 2 to retain a history of records, either on all updates or on updates to a specified set of columns.
+
+Syntax :
+
+apply_changes(
+  target = "<target-table>",
+  source = "<data-source>",
+  keys = ["key1", "key2", "keyN"],
+  sequence_by = "<sequence-column>",
+  ignore_null_updates = False,
+  apply_as_deletes = None,
+  apply_as_truncates = None,
+  column_list = None,
+  except_column_list = None,
+  stored_as_scd_type = <type>,
+  track_history_column_list = None,
+  track_history_except_column_list = None
+)
+
+Important :
+We must declare a target streaming table to apply changes into. also, we can optionally specify the schema for the target table. When specifying the schema of the apply_changes target table, we must also include
+the __START_AT and __END_AT columns with the same data type as the sequence_by field.
+
+When to use DLT :
+1) The source data being loaded incrementally or change data feed from source system/databases which can be consumed as streaming source while declaring streaming delta live table,
+streaming delta live table only supported to be declared only on append data loads 
